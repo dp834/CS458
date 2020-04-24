@@ -1,0 +1,250 @@
+\documentclass{article}
+
+\usepackage[margin=.75in]{geometry}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage[shortlabels]{enumitem}
+
+\lstset{
+    basicstyle=\ttfamily,
+    mathescape
+}
+
+\author{Damien Prieur}
+\title{Homework 1 \\ CS 458}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Problem 1}
+In the first recitation session we designed an algorithm with $O(\log k \cdot n^3)$ running time that given a graph $G=(V,E)$ computes all-pairs shortest paths where each shortest path uses \textbf{exactly} $k$ edges, denoted by $D^{=k}_{i,j}$.
+Note these paths may form a circle as show in the example below.
+Particularly, we modified the recursive formula with
+$$\hat{d}^k (v_i,v_j) = \min_{v_l \in V\setminus v_j} \{d^{k-1}(v_i,v_l) + w(v_l,v_j)\}$$
+and defined a new Extend Shortest Path procedure and applied the repeated squaring.
+Consider now the similar problem that for a given $k$ we want to compute a shortest path that uses at least $k$ edges denoted by $D^{\geq k}_{i,j}$.
+Note that the cost of the shortest path that uses at least $k$ is never larger than the cost of the shortest path that uses exactly $k$ edges.
+
+\begin{enumerate}[a)]
+\item Modify the procedure we discussed in the recitation session to compute $D^{\geq k}_{i,j}$ for all pairs $i,j$.
+The running-time of your algorithm should be $O((\log k + n - k)\cdot n^3)$.\\
+
+If we are looking for at least k edges then we should be looking for $\min_{l \in [k,n]} D^{=l}_{i,j}$
+We can stop after n since adding more edges than there are nodes in the graph would always increase the cost of the path since we have no negative edges.
+$$\hat{d}^{\geq k}(v_i,v_j) = \min \{d^{\geq k+1}(v_i, v_j), d^{=k}(v_i, v_j)\}$$
+From this we can see that we will need to compute $D^{=l}_{i,j}$ for $l \in [k, n]$.
+In order to get $D^{=n}$ we must compute $D^{= n-1}$ iteratively which takes $O(n^3)$ until we get to $D^{=k}$ which we can compute from our $O(\log k n^3)$ algorithm.
+So the total time it takes to compute $D^{=l}_{i,j}$ for $l \in [k, n]$ is $O((n-k)\cdot n^3 + \log k \cdot n^3) = O((\log k + n - k) \cdot n^3)$.
+This gives us all of the pieces to solve for $D^{\geq k}$ which will take $O((n-k)\cdot n^2)$ which will be apparent when we write the algorithm.
+
+\begin{lstlisting}
+function compute-$D^{\geq k}$()
+
+# take this from recitation
+# $O(\log k \cdot n^3)$
+$D^{=k}$ = compute-$D^{=k}$()
+
+# this is the same as from recitation, will take $O((n-k)\cdot n^3)$
+for l = k+1 to n
+    for i = 1 to n
+        for j = 1 to n
+            # loops over each node
+            $D^{=l}_{v_i,v_j} = \min_{v_l \in V \setminus v_j} \{d^{=k-1}(v_i, v_l) + w(v_l,v_j)\}$
+        end
+    end
+end
+
+# $O((n-k)\cdot n^2)$
+$D^{\geq n} = D^{=n}$
+for l = n-1 to k
+    for i = 1 to n
+        for j = 1 to n
+            # constant work, just 2 lookups and a comparison
+            $D{\geq l}_{i,j} = \min\{D^{\geq l+1}_{i,j}, D^{=l}_{i,j}\} $
+        end
+    end
+end
+
+return $D^{\geq k}$
+
+\end{lstlisting}
+
+To get the total running time we get sum of the running times which is
+$$O( \log k \cdot n^3 +(n-k)\cdot n^3 + (n-k)\cdot n^2) = O((\log k + n -k) \cdot n^3)$$
+
+
+\item It turns out we can solve this problem even faster. Give an algorithm that takes as input $D^{=k}_{i,j}$ and produces $D^{\geq k}_{i,j}$ for all pairs $i,j$ with running time $O(n^3)$.
+What is the total runtime? \\
+
+If you have $D^{=k}_{i,j}$ and $D_{i,j}$ (unrestricted all pairs shortest path) then we can find $D^{\geq k}_{i,j}$ with the following.
+$$D^{\geq k}_{i,j} = \min_{l \in V} \{D^{=k}_{i,l} + D_{l,j} \}$$
+This is taking the minimum cost from taking at least $k$ steps from $i$ then taking the shortest path from the end of the initial path to $j$.
+The length of this will be at least $k$ as we use that as our initial path and are only adding to it.
+The cost of this will be the cost of computing the all pairs shortest path and merging the two solutions.
+\begin{lstlisting}
+function compute-$D^{\geq k}$($D^{=k}$)
+
+# computes all pairs shortest path in $O(n^3)$
+D = Floyd-Warshall()
+
+# $O(n^3)$
+for i = 1 to n
+    for j = 1 to n
+        # for each node
+        $D^{\geq k}_{i,j} = \min_{l \in V} \{D^{=k}_{i,l} + D_{l,j} \}$
+    end
+end
+
+return $D^{\geq k}$
+\end{lstlisting}
+
+Adding the runtime of each section we can see that it takes $O(n^3)$ if we are given $D^{=k}_{i,j}$.
+If we must compute $D^{=k}_{i,j}$ ourselves then this algorithm takes $O(n^3 + n^3 \cdot \log k) = O(n^3 \cdot \log k)$
+
+
+
+\end{enumerate}
+
+\newpage
+\section*{Problem 2}
+In Lecture 3 we showed how to calculate the longest increasing subsequence. This requirement turned out too strict and we are interested in finding the \textbf{longest close-to-increasing subsequence}.\\
+\indent We say that a sequence of numbers $Z$ is close-to-increasing if the size of any decreasing substring is at most 2.
+So given two consecutive elements in the sequence $Z_i$ and $Z_{i+1}$ it must either be that
+\begin{itemize}
+\item $Z_i < Z_{i+1}$
+
+\item or if $Z_i > Z_{i+1}$ it must be that $Z_{i+1} < Z_{i+2}$.
+\end{itemize}
+
+\begin{enumerate}[a)]
+\item Give a dynamic programming algorithm using the following optimal subproblem structure $LCIS^{+}(i,j)$: is the longest close to increasing subsequence that ends with $X_i,X_j$, i.e., its last element is $X_i$ and its second to last element is $X_j$.
+Give a recursive formula, prove its correctness and write a bottom-up implementation.
+What is the runtime of your algorithm? \\
+
+\[
+    LCIS^+(i,j) =
+\begin{cases}
+    0,                                          & j \geq i      \\
+    2,                                          & j == 1        \\
+% since we are increasing we can take the longest no matter what
+    1 + \max_{l < j}\{LCIS^+(j,l)\}             & Z_j < Z_i     \\
+    1 + \max_{l<j \in X_l<X_j} \{LCIS^+(j,l)\}  & \text{otherwise}
+\end{cases}
+\]
+
+The first two cases are the base cases for our problem.
+The next third case $Z_j < Z_i$ when we are ending on an increase, we add one to the longest previously occurring sequence that ended at the $j$.
+The fourth and final case is when we are ending on a decrease, we can only end on a decrease if the previous ending was an increase, so take the max longest that is also increasing at the end.
+
+\begin{lstlisting}
+function longest-close-to-increasing-subsequence(Z)
+
+$LCIS^+$ = 0
+
+# start at 2 since we need at least 2 elements
+for i = 2 to n
+    for j = 1 to i
+        if(j == 1)
+            $LCIS^+(i,j)$ = 2;
+            LCISparent(i,j) = null;
+        elif($Z_j < Z_i$)
+            for l = 1 to j-1
+                $LCIS^+(i,j)$ = $\max \{LCIS^+(i,j), LCIS^+(j,l)\}$
+                if(swapped)
+                    LCISparent(i,j) = l;
+                end
+            end
+        elif($Z_j>Z_i$)
+            for l = 1 to j-1
+                if($Z_l < Z_j$)
+                    $LCIS^+(i,j)$ = $\max \{LCIS^+(i,j), LCIS^+(j,l)\}$
+                if(swapped)
+                    LCISparent(i,j) = l;
+                end
+            end
+        end
+    end
+end
+
+return max(LCIS)
+\end{lstlisting}
+To reconstruct the sequence you can go through the $LCISparent$ array starting from the index with the max length and traverse up the list.
+This has a runtime of $O(n^3)$
+
+
+
+\item Give a dynamic programming algorithm using the following optimal subproblem structure $LCIS^{+}(i)$: is the longest close to increasing subsequence that ends at $X_i$ and the auxiliary optimal subproblem structure $LCIS^{+,inc}(i)$: the longest close to increasing subsequence that ends at $X_i$ in an increasing fashion (the second to last element is smaller than $X_i$).
+Give a recursive formula for both optimal subproblem structures, prove their correctness and write a bottom-up implementation.
+What is the runtime of your algorithm? \\
+
+
+$$LCIS^+(i) = \max \{LCIS^{+,inc}(i),  LCIS^{+,dec}(i)\}$$
+This holds true because we can end on either increasing or decreasing, all the hard work is done in the two other subproblems.
+
+\[
+    LCIS^{+,inc}(i) =
+\begin{cases}
+    1,                                          & i == 1        \\
+    1 + \max_{l<i \in X_l<X_i} \{LCIS^+(l)\}    & \text{otherwise}
+\end{cases}
+\]
+
+First we have the base case, if you have one element it is the longest sequence.
+The second case will append itself to every longest close to increasing sequence and store the length of the longest one.
+We need to apply two restrictions.
+\begin{enumerate}
+\item The item must appear before $i$ since it must be a sequence
+\item The element must be less than $X_i$ or else we wouldn't be increasing
+\end{enumerate}
+We don't need to restrict the inner function call as if we are increasing we can continue both an increasing or decreasing sequence.
+
+\[
+    LCIS^{+,dec}(i) =
+\begin{cases}
+    1,                                              & i == 1        \\
+    1 + \max_{l<i \in X_i<X_l} \{LCIS^{+,inc}(l)\}  & \text{otherwise}
+\end{cases}
+\]
+
+First we have the base case, if you have one element it is the longest sequence.
+The second case will append itself to every longest close to increasing sequence and store the length of the longest one.
+We need to apply three restrictions.
+\begin{enumerate}
+\item The item must appear before $i$ since it must be a sequence
+\item The element must be greater than $X_i$ or else we wouldn't be decreasing
+\item The element must not end a $LCSI^{+,dec}$ or else we wouldn't satisfy the second condition given above
+\end{enumerate}
+
+
+\begin{lstlisting}
+function compute-$LCIS^+$()
+$LCIS^+$ = 0
+# can always start a sequence at itself
+$LCIS^{+,inc}$ = 1
+$LCIS^{+,dec}$ = 1
+
+for i = 1 to n
+    lcisDecMax = $LCIS^{+,dec}(i)$
+    lcisIncMax = $LCIS^{+,inc}(i)$
+    for l = 1 to i - 1
+        if($X_i < X_l$)
+            lcisDecMax = $\max \{\text{lcisDecMax}, LCIS^{+,dec}(l) + 1 \}$
+        elif($X_i > X_l$)
+            lcisIncMax = $\max \{\text{lcisIncMax}, LCIS^{+,inc}(l) + 1 \}$
+        end
+    end
+    $LCIS^{+,dec}(i)$ = lcisDecMax
+    $LCIS^{+,inc}(i)$ = lcisIncMax
+end
+
+\end{lstlisting}
+We get a runtime of $O(n^2)$ as we have $\sum_{i=1}^n \sum_{l=1}^{i-1} 1 \approx \frac{n^2}{2}$
+
+
+
+\end{enumerate}
+
+\end{document}
+
