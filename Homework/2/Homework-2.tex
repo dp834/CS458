@@ -1,0 +1,76 @@
+\documentclass{article}
+
+\usepackage[margin=.75in]{geometry}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage[shortlabels]{enumitem}
+
+\lstset{
+    basicstyle=\ttfamily,
+    mathescape
+}
+
+\author{Damien Prieur}
+\title{Homework 1 \\ CS 458}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Problem 1}
+An ordered stack is a data structure that stores a sequence of items and supports the following operations.
+\begin{itemize}
+\item $Push'(x)$ removes all items smaller than x from the beginning of the sequence and then adds $x$ to the beginning of the sequence.
+\item $Pop$ deletes and returns the first item in the sequence.
+\end{itemize}
+\indent Prove that if we start with and empty data structure, the amortized cost of each $Push'$ and $Pop$ operation is $O(1)$.
+\newline
+\newline
+\indent This is literally a normal stack but pops can happen during inserts by the data-structure. Just use the same analysis.
+
+\newpage
+\section*{Problem 2}
+You're in charge of food rationing, or as the locals call it, \emph{the dining halls}.
+Every person is assigned to a dining hall.
+These assignments are based on where the people live - the municipal government has decreed that no person should have to travel more than a quarter mile from their house to get to a dining hall.
+After making this promise, the government realized that implementing this plan might be a bit tricky; as you may know dining halls aren't great places when they're over-congested.
+Your job is to figure out if there's a way to feed everyone without overtaxing any one dining hall.
+\\
+\indent Formally, you're given a list of all $n$ people and a list of the $m$ dining halls.
+Each person $i$ is within a quarter mile of some set $S_i$ of dining halls, and must be assigned to some dining hall in $S_i$.
+Each dining hall $j$ has a capacity $C_j$, which is an upper limit on the number of people it can feed.
+Your job is to assign people to dining halls in a way that feeds all people and doesn't overtax any dining hall.
+Give an algorithm that computes such an assignment, or outputs that no such assignment exists.
+Your algorithm should return in time polynomial in $n$ and $m$. Analyze your algorithm;s runtime and prove that it is correct.
+\\
+\indent You may use any algorithm we studied during lecture for max flow as a black box.
+Mention which you are using in your runtime analysis.
+\newline
+\newline
+\indent We can model this as a max flow problem. We need to reduce this problem to a flow problem.
+To do this we attach all the students to a super source that has a capacity of $1$ to represent the fact that a student is assigned to one and only one dining hall.
+Then for each $i$ we attach an edge from $i$ to each dining hall in $S_i$ with a capacity of 1, this capacity doesn't actually matter since the students are restricted from the super source capacity of one to each student.
+Then we attach each dining hall $j$ to a super sink with capacity $C_j$ so that they can't be assigned more students than their capacity.
+With this setup we run a max flow algorithm and see if $|f| = n$ it can't be larger than that since the only way out of the source node is through each student.
+If all students are being used then we get a max flow of $|f| = n$, but if $|f| < n$ then we don't have a solution.
+The dining halls cannot be matched to students with the distance and capacity constraints.
+
+\newpage
+\section*{Problem 3}
+One intuitive story for the max flow problem is that the input graph $G = (V,E)$ is a rail network, the capacities are shipping capacities along rail lines, and the algorithm designer interested in maximizing the volume of shipments from some source city $s$ to the sink city $t$.
+\\
+\indent You're interested in ruining this particular algorithm designer's plans.
+Specifically, we're given a rail network $G = (V,E)$ with \emph{unit capacities}, a source $s$, and a sink $t$.
+We have enough explosives to destroy $d$ rails.
+Our goal is to reduce the volume of shipping between $s$ and sink $t$ (computed via max flow) by as much as possible.
+The question is: which ones should we destroy?
+\\
+\indent Give an efficient algorithm which takes $G$,$s$,$t$, and $d$ as inputs, and returns a set of rails $S \subseteq E$ which , when removed, reduces the total shipments from $s$ to $t$ by the maximum amount.
+Prove correctness and runtime for your algorithm.
+\newline
+\newline
+\indent Find the min cut and choose the edge with the highest capacity and destroy that edge. Cutting after cutting that edge the min cut should(check) be the min cut. Remove as many edges from the min cut edge as possible. When you cut an edge you are guaranteed to drop the flow by the amount of the edge that is removed. If that can't be argued then recompute the min-cut edge after each edge removal and repeat. Can find min-cut edge in $O(nm^2)$ with Edmond-Karp algorithm. Need to run it $d$ times so runtime should be $O(nm^2d)$
+
+\end{document}
+
