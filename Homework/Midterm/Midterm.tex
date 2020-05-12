@@ -1,0 +1,223 @@
+\documentclass{article}
+
+\usepackage[margin=.75in]{geometry}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage[shortlabels]{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows, %
+                shapes, positioning}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+\lstset{
+    basicstyle=\ttfamily,
+    mathescape
+}
+
+\author{Damien Prieur}
+\title{Midterm \\ CS 458}
+\date{May 12, 2020}
+
+\begin{document}
+
+\maketitle
+
+\section*{Problem 1}
+\begin{enumerate}[a.]
+\item Consider adding a decrement operation to a binary counter.
+Provide a counter-example that is a series of $n$ operations of INCREMENT or DECREMENT such that the amortized cost per operation is $O(k)$ where $k$ is maximum bit size. \\
+\newline
+\indent INCREMENT until all $k$ bits will flip then run as many INCREMENTS followed by DECREMENTS as you want.
+First part of the sequence is $2^k$ INCREMENTS.
+Which we showed is constant time based on our amortized analysis from lecture.
+The following operations of INCREMENT then DECREMENT for the rest of the sequence will each swap $k$ bits each time one is called.
+The total cost will be:
+$$\sum_{i=0}^{k-1}\floor*{\frac{k}{2^i}} + (n-k)*k \leq 2k + nk - k^2$$
+$$\text{Amortized cost } \hat{c_i} = \frac{2k+nk-k^2}{n} = k + \frac{2k - k^2}{n} \in O(k)$$
+\item Consider a ternary counter, a counter that uses the ternary numerical system (base 3).
+Prove that the operation INCREMENT using the ternary counter has amortized cost of $O(1)$.\\
+\newline
+\indent Here we can follow the same process we used for the binary counter except each spot $i$ flips every $3^i$ iterations of INCREMENT.
+So for the total cost for any spot $i$ we get a total cost of $\floor{\frac{n}{3^i}}$ over $n$ INCREMENTS.
+With this we can find the total cost for a ternary number of length $k$ the total cost for $n$ increments is:
+$$\sum_{i=0}^{k-1}\floor*{\frac{n}{3^i}} \leq \sum_{i=0}^{\infty}\frac{n}{3^i} = \frac{3n}{2}$$
+Which gives us and amortized cost of:
+$$\text{Amortized cost } \hat{c_i} = \frac{3n}{2}\cdot\frac{1}{n} = \frac{3}{2} \in O(1)$$
+This makes sense as it should be lower than the binary counter since carrying happens less frequently.
+If it doesn't flip more frequently than the binary counter than we know that ternary operator should also be $O(1)$.
+\end{enumerate}
+
+\newpage
+\section*{Problem 2}
+Consider a graph $G = (V,E)$ where some vertices are colored blue.
+Let $B \subseteq V$ be the set of blue vertices.
+Our goal is to compute all pairs shortest path such that each shortest path uses at least one blue vertex
+(if either $i$ or $j$ is blue then this immediately satisfies the constrain without posing any restrictions on the path).
+
+\begin{enumerate}[a.]
+\item Compute all-pairs shortest path under this new constraint where there is exactly one blue vertex, i.e., $|B| = 1$.
+The running time of your algorithm should be $O(n^3)$.\\
+\newline
+\indent Modify Floyd-Warshall by using a different update rule and keeping track of a second matrix.
+The two matrices are $D^k(v_i,v_j)$ and $B^k(v_i,v_j)$.
+\newline
+$D^k(v_i,v_j)$ is the matrix that holds the shortest path from vertex $v_i$ to $v_j$ using vertices $v_1$ to $v_k$ but doesn't contain any blue vertices.
+\newline
+$B^k(v_i,v_j)$ is the matrix that holds the shortest path from vertex $v_i$ to $v_j$ using vertices $v_1$ to $v_k$ but contains exactly \emph{one} blue vertex.
+\newline
+Initially the matrix $D^0$ is equal to all the edge weights between nodes that aren't in $B$.
+While the matrix $B^0$ is equal to all the edge weights between nodes that are in $B$ to those not in $B$.
+\newline
+The new update rule is as follows:
+
+\[
+    B^k(v_i, v_j) =
+\begin{cases}
+    \infty                                      & v_i \in B \& v_j \in B \\
+    min\{B^{k-1}(v_i,v_j), B^{k-1}(v_i,v_k) + d^{k-1}(v_k,v_j),  d^{k-1}(v_i,v_k) + B^{k-1}(v_k,v_j)\} &  (v_i \in B | v_j \in B) \& v_k \notin B \\
+    min\{B^{k-1}(v_i, v_j), B^{k-1}(v_i, v_k) + B^{k-1}(v_k, v_j)\}       & v_k \in B \\
+    B^{k-1}(v_i,v_j) & \text{otherwise}
+\end{cases}
+\]
+\newline
+\begin{enumerate}[1)]
+\item Both endpoints are in $B$ this could not be a valid path since we can only have 1.
+\item One endpoint is in $B$ and the middle vertex is not.
+We update based on the minimum of previous best blue, using the starting blue vertex, or using the ending blue vertex.
+\item Neither endpoint is in $B$ but the middle vertex is in $B$.
+We update based on the minimum of previous best blue or using vertex $v_k$.
+\item None of the items are in $B$, just carry value on from before
+\end{enumerate}
+
+\[
+    D^k(v_i, v_j) =
+\begin{cases}
+    min\{D^{k-1}(v_i,v_j), D^{k-1}(v_i,v_k) + D^{k-1}(v_k,v_j)\}    & v_i, v_j, v_k \notin B \\
+    D^{k-1}(v_i,v_j)                                                & v_k \in B \\
+    \infty                                                          & \text{otherwise}
+\end{cases}
+\]
+\begin{enumerate}[1)]
+\item None of the items are in $B$, compute the shortest path using only nodes without blue vertices.
+\item The middle vertex is blue so we can use it, just take the previous best.
+\item One of the end vertices is blue so we can't make a path without blue vertices.
+\end{enumerate}
+
+
+
+\begin{lstlisting}
+Input: adjacency nxn matrix $W$
+// Edge weights that don't use blue nodes
+$D^0$ = $W \notin B$
+// Edge weights that do use blue nodes
+$B^0$ = $W \in B$
+
+For k = 1 to n
+    For i = 1 to n
+        For j = 1 to n
+            if($v_i \in B$ and $v_j \in B$)
+                $B^k = \infty$
+                $D^k(v_i, v_j) = \infty$
+            else if( ($v_i \in B$ or $v_j \in B$) and $v_k \notin B$)
+                $B^k(v_i,v_j) = min\{B^{k-1}(v_i,v_j), B^{k-1}(v_i,v_k) + d^{k-1}(v_k,v_j),  d^{k-1}(v_i,v_k) + B^{k-1}(v_k,v_j)\}$
+                $D^k(v_i, v_j) = \infty$
+            else if($v_k \in B$)
+                $B^k(v_i, v_j) = min\{B^{k-1}(v_i, v_j), B^{k-1}(v_i, v_k) + B^{k-1}(v_k, v_j)\}$
+                $D^k(v_i, v_j) = D^{k-1}(v_i,v_j)$
+            else
+                $B^k(v_i, v_j) = B^{k-1}(v_i,v_j)$
+                $D^k(v_i,v_j) = min\{D^{k-1}(v_i,v_j), D^{k-1}(v_i,v_k) + D^{k-1}(v_k,v_j)\}$
+return $B^n$
+
+\end{lstlisting}
+As we can see the algorithm will loop $n^3$ times doing some amount of work bounded by a constant, some comparisons and additions.
+Therefore this algorithm takes $O(n^3)$
+
+\item Compute all-pairs shortest path under this new constraint for an arbitrary number of blue vertices $|B| \geq 1$.
+The running time of your algorithm should be $O(n^3)$.\\
+\newline
+\indent We can approach the problem similar to Part a. but change $B$ to contain at \emph{least} one vertex in $B$.
+The new update rule is as follows:
+
+\[
+    B^k(v_i, v_j) =
+\begin{cases}
+    B^{k-1}(v_i,v_j)                        & v_i, v_j, v_k \notin B \\
+    min\{B^{k-1}_{v_i,v_j}, B^{k-1}_{v_i,v_k} + D^{k-1}_{v_k,v_j}, D^{k-1}_{v_i,v_k} + B^{k-1}_{v_k,v_j}, B^{k-1}_{v_i,v_k} + B^{k-1}_{v_k,v_j}\} & \text{otherwise}
+\end{cases}
+\]
+\newline
+\begin{enumerate}[1)]
+\item If nothing is in $B$ then just carry the value from before.
+\item Something is in $B$ take the minimum of the previous value, all combinations of 1st and second half using $B$ and $D$  where $B$ is used at least once.
+I used a shorthand here as it was too long with the $(v_i,v_j)$ terms so they are subscripted.
+\end{enumerate}
+
+\[
+    D^k(v_i, v_j) =
+\begin{cases}
+    min\{D^{k-1}(v_i,v_j), D^{k-1}(v_i,v_k) + D^{k-1}(v_k,v_j)\}    & v_i, v_j, v_k \notin B \\
+    D^{k-1}(v_i,v_j)                                                & v_k \in B \\
+    \infty                                                          & \text{otherwise}
+\end{cases}
+\]
+\begin{enumerate}[1)]
+\item None of the items are in $B$, compute the shortest path using only nodes without blue vertices.
+\item The middle vertex is blue so we can use it, just take the previous best.
+\item One of the end vertices is blue so we can't make a path without blue vertices.
+\end{enumerate}
+\end{enumerate}
+
+This goes into the same algorithm as before so I won't be rewriting it. The runtime will also be $O(n^3)$ for the same reasons.
+Triple nested loop of $n$ operations each with constant amount being done inside of it.
+
+\newpage
+\section*{Problem 3}
+You decided to throw a costume party for all of your highschool friends, but here is a caveat, you want this to be a surprise and none should learn about the reunion before they arrive at your house.
+However, if any of your friends observes a familiar face dressed in a costume on their way to your house they will realize what is going on.
+To avoid this in your invitation letter you plan to provide direction for each of your friends on how to arrive at your house in order to avoid this scenario.
+\newline
+\indent More formally, you have an undirected graph $G$ (the map of the city) in which vertices represent intersections and edges represent roads between them.
+The houses of your highschool friends are represented by special vertices $s_1,s_2, ..., s_k$ and your house is represented by an additional special vertex $t$. A suggested route for your friend $i$ corresponds to a path from $s_i$ to $t$
+\newline
+\begin{enumerate}[a.]
+\item Give an efficient algorithm that determines whether or not all of your friends can arrive at your house using routes in the map such that no road is used by more than one of your friends.\\
+\newline
+This would be impossible since you live on one road so everyone would have to at least drive on that road unless if you have just 2 friends coming from opposite sides of the street.
+But now for actually solving this question.\\
+\indent We model this as a flow problem which requires a directed graph with capacities.
+To turn this undirected graph into a directed one we can split each edge into a pair of edges, one for each direction.
+In a solution to max flow only one edge from each pair of edges should be used as if both are used the edge could be removed.
+The paths would not take that road and instead you could continue each path with the other path by not traveling through the double used edge.
+\newline Now that we have a directed graph we can continue.
+With each friend $s_i$ connected to a super source with capacity $1$.
+This guarantees that each friend is assigned only one path to my house.
+The rest of the graph's edges should have a capacity of $1$ as well since a road can also only be used once.
+Then to see if there is a solution and what it is if it does exist we can run any max flow algorithm on this, lets use Edmonds-Karp.
+If there is a solution the max flow $|f| = k$ where $k$ is the number of friends.
+If this is the case then each friend has their own path due to their connection to the source being limited to $1$ and the source not being connected to anything else.
+This also makes the solution $|f| > k$ impossible as the min cut will always be at most the cut of all the edges leaving the Super Source.
+If $|f| < k$ then there is not path where my friends can each take their unique paths to my house.
+Whoever doesn't have a flow through them gets uninvited.
+The runtime for this algorithm would be $O(VE^2)$ due to Edmonds-Karp.
+The number of vertices is $|V| = 1 + n$ where $n$ is the number of vertices in the graph $G$ given to us which contains my friends houses and my own.
+The additional vertex comes from the super source.
+The number of edges will be $|E| = k + m $ where $m$ is the number of edges in the graph $G$ and the $k$ come from the edges of my friends' houses to the super source.
+This gives a running time of $O(n(2m+k)^2)$ where $k$ is most likely much smaller than $m$ since there are more intersections than friends.
+
+\item You realized that your solution for Part a. had a terrible mistake.
+Even though all roads are used by at most one route that you designed for your friends they are still able to see each other while crossing the same intersection!
+Correct your solution for Part a. by giving an efficient algorithm that determines whether or not all of your friends can arrive at your house using routes in the map such that no road or intersection is used by more than one of your friends.\\
+\newline
+\indent The easiest fix to this problem is of course to limit the capacity through a vertex to $1$.
+This can be easily achieved by splitting each intersection (vertex) into a pair of vertices connected once for coming into an intersection and one for leaving an intersection.
+The input to the intersection only has flows into it from all roads the original vertex touched and one outgoing edge of capacity one to the outgoing node for the intersection.
+The out vertex only has flows leaving it to all roads from the original vertex that it touched and one incoming node from the previously mentioned node with capacity one.
+This forces an intersection to be used only once and doubles the number of nodes and adds a new edge for each vertex.
+The rest of the problem should be the same as in Part a.
+The runtime will be $O(2|V|(V+E)^2) = O(2n(n+2m+k)^2) \in O(n(n+m+k)^2) $
+\end{enumerate}
+
+\end{document}
+
