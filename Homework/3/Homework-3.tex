@@ -1,0 +1,353 @@
+\documentclass{article}
+
+\usepackage[margin=.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tabu}
+\usepackage[shortlabels]{enumitem}
+
+\author{Damien Prieur}
+\title{Homework 3 \\ CS 458}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Problem 1}
+In class, Linear Programming was formulated in the following way:
+\newline
+Inputs:
+\begin{itemize}
+\item $n$ decision variables $x_1, ... , x_n$.
+\item $m$ linear inequality constraints. Constraint $j$ is give by $a_{1j}x_1 + ... + a_{nj}x_n \leq b_j$.
+\item Linear objective function $c_1x_1 + ... c_nx_n$.
+\end{itemize}
+Goal: Find values $x_1^*, ... , X_n^*$ for decision variables such that
+\begin{itemize}
+\item Constraints are satisfied.
+\item $x_1^*, ... ,x_n^*$ is maximized
+\end{itemize}
+
+\indent This statement of the input, with a maximization objective, "less-then" constraints, and non-negative variables, is often referred to as "standard form" for linear programs.
+In this problem you'll show that linear programming can handle a few other things which on face may not even seem "linear" at all.
+In each part, you'll be given a mathematical program, and you job is to write an equivalent linear program in canonical form.
+You don't need to offer any proof, but you should briefly explain why the two programs are equivalent, and how to go translate between solutions to the two programs.
+\newline
+[Hint, for all three parts: define extra variables.]
+
+\begin{enumerate}[1.]
+\item \emph{Unconstrained Variables}
+\newline
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c}
+\text{maximize}   & c_1x_1+ ... + c_nx_n       &          \\
+\text{subject to} & a_{11}x_1+ ... + a_{1n}x_n & \leq b_1 \\
+                  & a_{21}x_1+ ... + a_{2n}x_n & \leq b_2 \\
+                  &            ...             &          \\
+                  & a_{m1}x_1+ ... + a_{mn}x_n & \leq b_m
+\end{tabu}$
+\end{table}
+[Note the absence of nonegativity constraints.]
+\newline
+\newline
+We can split each variable $x_i$ into a new pair of variables $x_{ip}, x_{in}$ to be substituted using the following.
+$x_i = x_{ip} - x_{in}$.
+This allows for $x_i$ to reach any number while being represented by only positive values.
+The new linear program would now look like this:
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c}
+\text{maximize}   & c_1(x_{1p}-x_{1n}) + ... + c_n(x_{np}-x_{nn})      &          \\
+\text{subject to} & a_{11}(x_{1p}-x_{1n})+ ... + a_{1n}(x_{np}-x_{nn}) & \leq b_1 \\
+                  & a_{21}(x_{1p}-x_{1n})+ ... + a_{2n}(x_{np}-x_{nn}) & \leq b_2 \\
+                  &            ...                                     &          \\
+                  & a_{m1}(x_{1p}-x_{1n})+ ... + a_{mn}(x_{np}-x_{nn}) & \leq b_m \\
+                  & x_{1p}, x_{1n}, ... , x_{1p}, x_{1n}               & \geq 0 \phantom{-}
+\end{tabu}$
+\end{table}
+\newpage
+
+\item \emph{Maximin Objective:}
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c}
+\text{maximize}   & \min(x_1, ... ,x_n)        &          \\
+\text{subject to} & a_{11}x_1+ ... + a_{1n}x_n & \leq b_1 \\
+                  & a_{21}x_1+ ... + a_{2n}x_n & \leq b_2 \\
+                  &            ...             &          \\
+                  & a_{m1}x_1+ ... + a_{mn}x_n & \leq b_m \\
+                  & x_1, ... , x_n             & \geq 0
+\end{tabu}$
+\end{table}
+\newline
+Replace the objective function with a new variable $X$.
+All we need is for $X$ to be equal to the smallest $x_i$, so we must add a constraint for each $x_i$.
+$$X \leq x_i \quad \forall i \in {1,..,n}$$
+This forces $X$ to equal the smallest $x_i$ as it is not being constrained by anything else.
+The new linear program would now look like this:
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c}
+\text{maximize}   &            X               &          \\
+\text{subject to} & a_{11}x_1+ ... + a_{1n}x_n & \leq b_1 \\
+                  & a_{21}x_1+ ... + a_{2n}x_n & \leq b_2 \\
+                  &            ...             &          \\
+                  & a_{m1}x_1+ ... + a_{mn}x_n & \leq b_m \\
+                  &            X \leq x_i      & \forall i \in {1,n} \\
+                  & x_1, ... , x_n             & \geq 0
+\end{tabu}$
+\end{table}
+
+\item \emph{Absolute Value}
+\newline
+\begin{table}[h!]
+\centering
+$\begin{tabu}{c c c}
+\text{minimize}   & |c_1x_1 + ... + c_nx_n|    &          \\
+\text{subject to} & a_{11}x_1+ ... + a_{1n}x_n & \leq b_1 \\
+                  & a_{21}x_1+ ... + a_{2n}x_n & \leq b_2 \\
+                  &            ...             &          \\
+                  & a_{m1}x_1+ ... + a_{mn}x_n & \leq b_m \\
+                  & x_1, ... , x_n             & \geq 0
+\end{tabu}$
+\end{table}
+\newline
+We need to represent the absolute value in terms of its two components.
+Instead of looking at the absolute value as a piecewise it is easier to use it as $|x| = max{-x,x}$ for the situation above.
+We can model this by adding a new variable $X$ and forcing it to be larger than $c \cdot x$ and $- (c \cdot x)$.
+Which we can add to our constraint list with:
+$$ c_1x_1 + ... + c_nx_n \leq X \quad \text{and} \quad -(c_1x_1 + ... + c_nx_n) \leq X $$
+Written in Canonical form we have
+$$ c_1x_1 + ... + c_nx_n - X \leq 0 \quad \text{and} \quad -(c_1x_1 + ... + c_nx_n) - X \leq 0 $$
+To change the minimization to a maximization we can use the fact that minimizing $f$ is the same as maximizing $-f$.
+The new linear program would now look like this:
+\begin{table}[h!]
+\centering
+$\begin{tabu}{c c c}
+\text{maximize}   &            -X              &          \\
+\text{subject to} & a_{11}x_1+ ... + a_{1n}x_n & \leq b_1 \\
+                  & a_{21}x_1+ ... + a_{2n}x_n & \leq b_2 \\
+                  &            ...             &          \\
+                  & a_{m1}x_1+ ... + a_{mn}x_n & \leq b_m \\
+                  & c_1x_1 + ... + c_nx_n - X  & \leq 0   \\
+                  & -(c_1x_1 + ... + c_nx_n)-X & \leq 0   \\
+                  & x_1, ... , x_n             & \geq 0
+\end{tabu}$
+\end{table}
+
+\end{enumerate}
+
+\newpage
+\section*{Problem 2}
+In this part, you are given several computational problems.
+Your task is to formulate each one as an integer linear program.
+You don't need to prove that the formulation is correct this time, but you should give an interpretation of the objective function and each constraint.
+Your formulations do not need to be in canonical form.
+
+\begin{enumerate}[a.]
+\item \emph{MAX 3-SAT:} Given a boolean formula $\Phi(x_1,...,x_n)$ in 3-conjunctive normal form, find a truth assignment for $x_1, ... , x_n$ which maximizes the number of clauses satisfied.
+For clause $C_j$, let $y_i \in \{0,1\}$ be a variable indicating whether or not $C_j$ is satisfied, and let $x_i \in \{0,1\}$ denote the truth value for the boolean variable $x_i$.
+Using $y_i$ and $x_i$ as your variables, formulate this problem as an integer program.
+\newline
+\newline
+Since we want to maximize the number of clauses we want to maximize over $\sum_i y_i$.
+Constraints:
+\begin{itemize}
+\item $\sum_{i\in C_j} x_i \geq y_j \quad \forall C_j \in C$
+\newline
+For each clause we cannot let $y_i$ be 1 unless ANY of the 3 variables evaluates to true.
+I'm not sure if I wrote it down correctly though.
+\end{itemize}
+This gives us
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c c}
+\text{maximize}   & \sum_i y_i & & \\
+\text{subject to} & \sum_{i\in C_j} x_i & \geq y_j & \forall C_j \in C \\
+                  & y_i   & \in \{0,1\} & \forall i \in C
+\end{tabu}$
+\end{table}
+
+\item \emph{Fair k-Suppliers.} Given a set of customers $D$, a set of suppliers $F$, distances $d_{ij}$ between each client $j \in D$ and supplier $i \in F$, and a positive integer $k$, the goal is to choose a subset of $k$ suppliers $S \subseteq F$ so as to minimize the total distance the customers have to travel to their closest selected supplier, i.e. $\sum_{j \in D} d(j,S)$.
+For each supplier $i \in F$ let $y_i \in \{0,1\}$ indicate whether we choose supplier $i$.
+For each client $j \in D$ and each supplier $i \in F$, let $x_{i,j}$ indicate whether client $j$ is "assigned" $j$ to supplier $i$ (i.e. if $i$ is $j$'s closest supplier in $S$).
+Using these $y_i$ and $x_{i,j}$ as your variables, formulate this problem as an integer program.
+\newline
+\newline
+Our goal is $\min \sum_{i \in F}\sum_{j \in D} d_{i,j} \cdot x_{ij}$ which is the sum of the distances of chosen pairs.
+\newline
+Constraints:
+\begin{itemize}
+\item $ \sum_i y_i \leq k $
+\newline
+We can not choose more than $k$ suppliers
+\item $ \sum_i x_{i,j} \geq 1 \quad \forall j \in D $
+\newline
+Each client should get supplies from at least one supplier. No more than one will be selected as due to the minimization and distances being positive.
+
+\item $ x_{i,j} \leq y_i \quad \forall i \in F, j \in D$
+\newline
+Assignments of suppliers to clients can only be made if the supplier is picked.
+
+\end{itemize}
+
+This gives us
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c c}
+\text{minimize}   & \sum_{i \in F}\sum_{j \in D} d_{i,j} \cdot x_{ij} & &   \\
+\text{subject to} & \sum_i y_i                 & \leq k   & \\
+                  & \sum_i x_{i,j}             & \geq 1   & \forall j \in D \\
+                  & x_{i,j}                    & \leq y_i & \forall i \in F, j \in D\\
+                  & y_i                     & \in \{0,1\} & \forall i \in F \\
+                  & x_{i,j}                 & \in \{0,1\} & \forall i \in F, j \in D
+\end{tabu}$
+\end{table}
+
+\item \emph{Weighted Independent Set.} Given an undirected graph $G = (V,E)$ with vertex weights $w_v \geq 0$, the goal is to find an independent set of maximum weight (independent set is a set of vertices such that there is no edge between any pair of vertices in the set).
+For each vertex $v$, let $x_v \in \{0,1\}$ indicate whether $v$ is in the independent set.
+Using these $x_v$ as your variables, formulate the maximum-weight independent set problem as an integer program.
+\newline
+\newline
+Let $e_{i,j} \in \{0,1\}$ be the representation of an edge between two vertices in the graph with a $1$ indicating an edge.
+Our goal is to maximize $\sum_{v\in V} w_v \cdot x_v$ which is the sum of selected vertices.
+Constraints:
+\begin{itemize}
+\item $ x_{i} + \sum_{v\in V \setminus {i}} x_v \cdot e_{i,v} \leq 1 \quad \forall i \in V$
+\newline
+If a vertex is selected ensure that no adjacent vertex is also selected.
+\end{itemize}
+This is the only constraint for feasible solutions.
+This gives us:
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c c}
+\text{maximize}   & \sum_{v \in V}w_v\cdot x_v & &   \\
+\text{subject to} & x_{i} + \sum_{v\in V \setminus {i}} x_v \cdot e_{i,v} & \leq 1 & \forall i \in V\\
+                  & x_v                     & \in \{0,1\} & \\
+\end{tabu}$
+\end{table}
+
+\item \emph{Load Balancing.} Given set $J$ of $n$ jobs and a set $M$ of $m$ machines, where job $j$ requires $p_j$ units of consecutive processing time and can only be assigned to a machine from the set $M_j \subseteq M$, the goal is to assign each job $j$ to some machine in $i \in M_j$ such that we minimize the maximum load on any machine (i.e the \emph{makespan}).
+(If $J_i \subseteq J$ denotes the job is assigned to a machine $i \in M$ in a feasible assignment, and using $L_i = \sum_{j \in J_i}p_j$ to denote its resulting load, we seek to minimize $\max_i L_i$). Let $x_{i,j}$ indicate whether job $j$ is assigned to machine $i \in M_j$.
+Also let $L$ denote the maximum load.
+Using these as your variables, formulate the load balancing problem as an integer program.
+\newline
+\newline
+Our objective was given in the problem statement $\min \max_i L_i$.
+\begin{itemize}
+\item $\sum_{i \in M_j} x_{i,j} = 1 \quad \forall j \in J$
+\newline
+A job must be assigned once.
+\item $L_i = \sum_{j\in J_i}p_j \cdot x_{i,j} \quad \forall i \in M$
+\newline
+Just sets the load for a machine so we can use it elsewhere.
+\end{itemize}
+\end{enumerate}
+This gives us:
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c c}
+\text{maximize}   & \min \max_i L_i & &   \\
+\text{subject to} & \sum_{i \in M_j} x_{i,j} & = 1 & \forall j \in J\\
+                  & x_{i,j}                 & \in \{0,1\} & \forall i,j \in J,M \\
+\end{tabu}$
+\end{table}
+
+
+\newpage
+\section*{Problem 3}
+In class we show how to model maximum flow using variable $f_{u,v}$ for every $u,v \in V$. Additionally we showed how to model the minimum $s - t$ cut using variables $x_{u,v}$ and $y_v$ for every vertex in $u,v \in V$.
+\newline
+\indent In this problem you will give an alternative linear program using paths.
+In all of your answers you have to provide a justification why the linear program correctly describes the problem you are given.
+
+\begin{enumerate}[a.]
+\item Let $\mathcal{P}$ denote the set of $s-t$ paths in $G$.
+For each path $P \in \mathcal{P}$, let $x_P$ denote the flow on $P$.
+Using these $x_P$ as your variables, formulate the maximum flow problem as a linear program.
+\newline
+\newline
+The flow through the whole graph is going to be given by $\sum_{p \in \mathcal{P}} x_p$.
+Constraints:
+\begin{itemize}
+\item $x_p \leq c(e) \quad \forall p \in \mathcal{P}, \forall e \in p$
+\newline
+The flow through a path must be smaller than every capacity on the path.
+\item $x_p \geq 0$
+\newline
+The flow must be positive.
+\end{itemize}
+This gives us:
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c c}
+\text{maximize}   & \sum_{p \in \mathcal{P}} x_p & & \\
+\text{subject to} & x_p & \leq c(e) & \forall p \in \mathcal{P}, \forall e \in p \\
+                  & x_{p}                 & \geq 0 & \forall p \in \mathcal{P}\\
+\end{tabu}$
+\end{table}
+
+\item For each edge $(u,v) \in E$, let $y_{uv} \in \{0,1\}$ indicate whether edge $(u,v)$ crosses the cut (that is, $y_{u,v} = 1$ if and only if $u \in S, v \in T$.)
+Using these $y_{uv}$ as your variables, formulate the minimum cut problem as an (integer) linear program.
+You are not allowed to use any other variables.
+\newline
+\newline
+Our goal is to $\min \sum_{(u,v) \in E} c(u,v) \cdot y_{uv}$.
+In other words we want to minimize the sum of capacities of edges that are being cut.
+Constraints:
+\begin{itemize}
+\item $\sum_{(u,v) \in p} y_{uv}  = 1 \quad \forall p \in \mathcal{P}$
+\newline
+There can only be one edge cut per path.
+\end{itemize}
+This gives us:
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c c}
+\text{minimize}   & \sum_{(u,v) \in E} c(u,v) \cdot y_{uv}& & \\
+\text{subject to} & \sum_{(u,v) \in p} y_{uv} &  = 1 & \forall p \in \mathcal{P} \\
+                  & y_{uv}             & \in \{0,1\} & \forall (u,v) \in E \\
+\end{tabu}$
+\end{table}
+
+\item Give the linear programming relaxation of the integer linear program you defined in part b.
+Show that it is the dual of the linear program you defined in part a.
+\newline
+\begin{table}[h!]
+\centering
+$\begin{tabu}{c c c c}
+\text{minimize}   & \sum_{(u,v) \in E} c(u,v) \cdot y_{uv}& & \\
+\text{subject to} & \sum_{(u,v) \in p} y_{uv} &  = 1 & \forall p \in \mathcal{P} \\
+                  & y_{uv}             & \geq 0  & \forall (u,v) \in E \\
+                  & y_{uv}             & \leq 1  & \forall (u,v) \in E \\
+\end{tabu}$
+\end{table}
+\newline
+We can see that the constraints from part a are equal to the objective from part b.
+And vice versa, one is a minimization while the other is maximization, and the constraints are just transposes of each other.
+
+\item Assuming $c(u,v)$ are integers, show that the integrality gap of both linear programs is defined in part (a) and (c) is 1.
+You can use any existing result you may know.
+\newline
+\newline
+When pivoting on simplex variables will take as much slack as possible.
+Since all elements that are pivotable have a coefficient of 1 when pivoting we are just adding subtracting and multiplying integers which all stay within the integers.
+In our case that will always be some combination of capacities being added or subtracted together.
+Since all capacities are integers then their sums and differences will also be integers.
+Since we aren't restricting the solution space to just integers and we still will get an integer then the integrality gap is going to be 1.
+
+\item Show that the integrality gap of the linear programming relaxation you define in part c. is still 1 even for arbitrary capacities $c(u,v) \in \mathbb{R}$ and $c(u,v) \geq 0$.
+\newline
+\newline
+This is a consequence of the pivot operation never using the capacity value for filling in new entries.
+All other entries in the table are 1.
+Therefore basic variables will always be some additions and subtractions of 1 and 0 but still bounded by the constraint $0 \leq y_{uv} \leq 1$.
+I know this is an incomplete explanation, but I'm not sure how to explain it very clearly or from a different angle.
+
+\end{enumerate}
+
+\end{document}
+
