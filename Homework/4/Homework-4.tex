@@ -1,0 +1,129 @@
+\documentclass{article}
+
+\usepackage[margin=.75in]{geometry}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tabu}
+\usepackage[shortlabels]{enumitem}
+
+\author{Damien Prieur}
+\title{Homework 4 \\ CS 458}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Problem 1}
+Consider the following integer linear program that generalizes vertex cover
+\newline
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c}
+\text{minimize}   & c_1x_1 + ... + c_mx_m       &          \\
+\text{subject to} &a_{i,1}x_1 + ... + a_{i,m}x_m& \geq b_i \quad \forall i \in \{1,2,...,n\} \\
+                  & x_j  & \in \{0,1\} \quad \forall j \in \{1,2,...,n\}
+\end{tabu}$
+\end{table}
+
+We will assume that the parameters satisfy the following conditions
+\begin{itemize}
+\item $a_{i,j},b_i,c_j$ are all non-negative integers
+\item $b_i,c_j > 0$
+\item A feasible solution exists, namely $\Sigma_j a_{ij} \geq b_i$
+\item and let $f = \max_{i=1,...,n}(\Sigma_{j=1}^m a_{i,j})$.
+\end{itemize}
+
+\begin{enumerate}[a.]
+\item State how the integer linear program generalizes vertex cover by defining $a_{i,j},c_j,b_i$ and $f$ in terms of a specific instance of vertex cover.
+\begin{itemize}
+\item $x_i \quad i \in \{1,...,m\}$ represents an vertex, binary variable either selected or not
+\item $a_{i,j} \quad i \in \{1,...,n\}, j \in \{1,...,m\}$ represents the 'reward' of edge $i$ being connected by vertex $j$
+\item $b_{i} \quad i \in \{1,...,n\}$ represents the minimum total 'reward' a edge must satisfy.
+\item $c_{i} \quad i \in \{1,...,m\}$ represents the cost of picking vertex $m$
+\item $f$ represents the maximum total 'reward' edge possible.
+\end{itemize}
+
+\item Give a polynomial-time approximation algorithm for any problem captured by this general integer linear programming formulation with approximation ratio \underline{less than or equal to} $f$ (you need to provide an upper bound).
+In other words given any linear program that satisfies the conditions outlined above give an algorithm that has approximation ratio $f$.
+\newline
+Given that we have a LP integer solution we can see how the relaxed version of the problem does when rounded.
+We begin with the same problem as is given except the final constraint is changed from $x_j \in \{0,1\}$ to $ 0 \leq x_j \leq 1$.
+Once we have a fractional solution we need to determine how to round.
+Looking at the first constraint, since we are talking about an edge only 2 of these variables $a_{i,j}$ will contribute to the sum.
+If we round both up since we don't know how much the $b_i$ term will effect other edges picked we can't accidentally undercover.
+In the worst case we will increase an edge by at most $f$ based on it's definition.
+$$\Sigma_{i=1}^m c_ix_i^{INT} \leq \Sigma_{i=1}^m c_i(f x_i) = f\Sigma_{i=1}^m c_ix_i = f \text{ Min GVC} $$
+I don't really see how $f$ connects to the objective function in any direct way, so this can't be correct.
+\end{enumerate}
+
+
+\newpage
+\section*{Problem 2}
+Consider the \emph{maximum cardinality matching problem on general graphs}:
+We seek to find a maximum cardinality subset of edges $M \subseteq E$ such that no edges $e, e' \in M$ share an endpoint.
+The integer linear programming formulation is the following:
+
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c c}
+\text{maximize}   & \sum_{e \in E} x_e & & \\
+\text{subject to} & \sum_{e\text{ incident to } v} x_e & \leq 1 & \forall v \in V \\
+                  & x_e   & \in \{0,1\} & \forall e \in E
+\end{tabu}$
+\end{table}
+Write its linear programming relaxation and show that the integrality gap is \underline{greater than or equal to} $\frac{3}{2}$ (you need to provide a lower bound)
+\newline
+Relaxed version just removes the integrality restriction and allows for the whole range from $0$ to $1$:
+\begin{table}[h]
+\centering
+$\begin{tabu}{c c c c}
+\text{maximize}   & \sum_{e \in E} x_e & & \\
+\text{subject to} & \sum_{e\text{ incident to } v} x_e & \leq 1 & \forall v \in V \\
+                  & x_e   & \in [0,1] & \forall e \in E
+\end{tabu}$
+\end{table}
+We can show that there is always a fractional feasible solution of $\frac{|e|}{|V|-1}$.
+\newline
+Set $x_e = \frac{1}{|V_{\text{sub-graph}}-1|} \quad \forall e \in E \text{for each sub-graph }$.
+Look at each sub-graph in the graph and count the number of vertices.
+For each sub-graph assign the edges in that sub-graph the value $\frac{1}{|V_{sub}-1}$
+All constraints are satisfied since we would be adding at most $|V|-1$ edges together which sums to exactly $1$ for each subgraph.
+In the case where we have $n$ complete sub-graphs with $3$ vertices the optimal integer solution is to select one edge from each so $n$ total edges.
+Each sub-graph has $3$ vertices and $3$ edges so the fractional solution would be $\frac{3n}{(3-1)} = \frac{3n}{2}$
+The integrality gap is $\frac{\text{FRAC}}{\text{INT}}$ so:
+$$ \lim_{n \to \infty} \frac{\frac{3n}{2}}{n} = \frac{3}{2} $$
+
+
+\newpage
+\section*{Problem 3}
+Given an undirected graph $G=(V,E)$, suppose we want to remove a \textbf{minimum number} of edges $F \subseteq E$ such that the remaining graph $G' = (V,E-F)$ contains no triangle.
+(I.e., there are no three vertices $u,v,w$ such that edges $(u,v),(v,w),(w,u)$ are all in $G'$.)
+\begin{enumerate}[a.]
+\item Give a polynomial-time approximation algorithm to solve this problem with approximation ratio \underline{less than or equal to} 3 (you need to provide an upper bound).
+\newline
+This algorithm will be greedy by searching for triangles in the graph and removing edges from the triangle.
+Just like the example in class the algorithm will remove every edge in the triangle as that improved the previous algorithm's performance and made for easier analysis.
+\newline
+For each triple of vertices of which there are ${n \choose 3} \in O(|V|^3)$ if any have edges that form a triangle add all $3$ edges to the set $F$.
+Remove these edges from $G$ as well, and repeat this process until there are not more triangles.
+At most this will run $|E|/3$ times as each time $3$ edges would be removed.
+Therefore the runtime is $O(n^3m)$ which is polynomial.
+\newline
+For the upper bound for the approximation we can look at the resulting set $F$.
+Each triangle in the set $F$ will be disjoint as we remove them a triangle at a time.
+The minimum set $F$ must contain at least one edge from each triangle we removed or else a triangle would still exist in the original graph.
+For each triangle that we generated in $F^{OPT}$ the algorithm's $F$ will have removed $2$ extra edges per triangle.
+This give us an approximation ratio of $\frac{2+1}{1} = 3$
+
+
+\item Provide a lower bound that matches the upper bound you proved in part (a).
+\newline
+If we start with the set $F^{OPT}$ we can build a set of triangles that could be removed from our algorithm.
+First we need to see that not two edges in $F^{OPT}$ are part of the same original triangle in $G$ or it could remove it from the final set $F$.
+If our algorithm were to identify each of these triangles we would remove the entire triangle for each edge in $F^{OPT}$.
+So just as before we are always over counting by $2$ edges giving the same ratio of $\frac{2+1}{1} = 3$
+\end{enumerate}
+
+\end{document}
+
